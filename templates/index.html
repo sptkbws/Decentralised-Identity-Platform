@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DID System — Decentralized Identity</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<!-- ── node status bar ────────────────────────────────────────────────── -->
+<div class="node-bar">
+  <span class="node-stat">node <span class="val" id="nb-node">—</span></span>
+  <span class="node-stat">chain <span class="val" id="nb-length">—</span> blocks</span>
+  <span class="node-stat">integrity <span class="val" id="nb-valid">checking…</span></span>
+  <span class="node-stat">peers <span class="val" id="nb-peers">—</span></span>
+</div>
+
+<!-- ── navbar ─────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <a href="#" class="navbar-brand" data-page="wallet">DECENTRALIZED VERIFICATION PLATFORM</a>
+
+  <ul class="nav-links">
+
+    <!-- Wallet -->
+    <li class="nav-item">
+      <a class="nav-link active" data-page="wallet">
+        <span class="dot"></span>wallet
+      </a>
+      <div class="dropdown">
+        <a class="dropdown-item" data-page-drop="wallet-create">Create DID</a>
+        <a class="dropdown-item" data-page-drop="wallet-view">View credentials</a>
+        <a class="dropdown-item" data-page-drop="wallet-share">Share / QR</a>
+      </div>
+    </li>
+
+    <!-- Issuer -->
+    <li class="nav-item">
+      <a class="nav-link" data-page="issuer">
+        <span class="dot"></span>issuer
+      </a>
+    </li>
+
+    <!-- Verifier -->
+    <li class="nav-item">
+      <a class="nav-link" data-page="verifier">
+        <span class="dot"></span>details &amp; verification
+      </a>
+    </li>
+
+    <!-- Chain explorer -->
+    <li class="nav-item">
+      <a class="nav-link" data-page="issuer">
+        <span class="dot"></span>chain explorer
+      </a>
+    </li>
+
+  </ul>
+
+  <div class="nav-right">
+    <div class="auth-indicator" id="auth-indicator">
+      <span class="status-dot"></span>
+      <span class="label">not authenticated</span>
+    </div>
+    <button class="btn btn-ghost" id="btn-logout"
+      style="padding:0.35rem 0.8rem;font-size:0.68rem">logout</button>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     WALLET PAGE
+════════════════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-wallet">
+  <div class="page-header">
+    <h1>Wallet</h1>
+    <p>Manage your Decentralized Identity. Create a DID, view credentials, or share via QR.</p>
+  </div>
+
+  <div id="wallet-flash"></div>
+
+  <!-- Create DID -->
+  <div class="card" id="section-wallet-create">
+    <div class="card-title">Create DID</div>
+    <p style="color:var(--text2);font-size:0.82rem;margin-bottom:1.2rem">
+      Generates a cryptographically random <code style="color:var(--green);font-size:0.78rem">did:decen:&lt;64-hex&gt;</code> identity token.
+      Store it securely — it is shown exactly once.
+    </p>
+    <button class="btn btn-primary" id="btn-create-did">Generate DID</button>
+
+    <div class="hidden mt-2" id="did-result">
+      <div class="did-box">
+        <span class="did-label">your DID</span>
+        <button class="copy-btn">copy</button>
+        <span class="did-value" style="display:block"></span>
+      </div>
+      <div class="alert alert-warn mt-1" style="font-size:0.75rem">
+        This DID will not be stored server-side. Copy it now and keep it safe.
+      </div>
+    </div>
+  </div>
+
+  <!-- View credentials -->
+  <div class="card" id="section-wallet-view">
+    <div class="card-title">View credentials</div>
+    <div class="form-group">
+      <label class="form-label">Your DID</label>
+      <input class="form-input" id="input-view-did" placeholder="did:decen:…" />
+    </div>
+    <button class="btn btn-primary" id="btn-view-creds">Lookup</button>
+
+    <div class="hidden mt-2" id="cred-result"></div>
+  </div>
+
+  <!-- Share / QR -->
+  <div class="card" id="section-wallet-share">
+    <div class="card-title">Share via QR</div>
+    <p style="color:var(--text2);font-size:0.82rem;margin-bottom:1.2rem">
+      Generates a QR code pointing to the public verification endpoint.
+      Anyone who scans it can view your active credentials.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Your DID</label>
+      <input class="form-input" id="input-share-did" placeholder="did:decen:…" />
+    </div>
+    <button class="btn btn-primary" id="btn-share">Generate QR</button>
+
+    <div class="hidden mt-2 qr-wrap" id="qr-result">
+      <img class="qr-img" id="qr-img" alt="QR code" />
+      <div class="qr-details">
+        <div class="did-box" style="margin-bottom:0.8rem">
+          <span class="did-label">scan URL</span>
+          <button class="copy-btn" id="btn-copy-qr-url">copy</button>
+          <span id="qr-scan-url" style="display:block;font-size:0.72rem"></span>
+        </div>
+        <p class="text-muted" style="font-size:0.75rem">
+          The QR code resolves to the public <code>/verify</code> endpoint — no login required to scan.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     ISSUER PAGE
+════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-issuer">
+  <div class="page-header">
+    <h1>Issuer</h1>
+    <p>Issue academic credentials to a DID. Each credential is mined as a block on the chain.</p>
+  </div>
+
+  <div id="issuer-flash"></div>
+
+  <!-- Issue form -->
+  <div class="card">
+    <div class="card-title">Issue credential</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1.2rem">
+      <div class="form-group">
+        <label class="form-label">DID</label>
+        <input class="form-input" id="issue-did" placeholder="did:decen:…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" id="issue-username" placeholder="e.g. Alpha Beta" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Degree / Achievement</label>
+        <input class="form-input" id="issue-degree" placeholder="e.g. B.Tech Computer Science" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry date</label>
+        <input class="form-input" id="issue-expiry" type="date" />
+      </div>
+    </div>
+
+    <!-- live hash preview -->
+    <div class="card" style="background:var(--bg);border-color:var(--border);margin-top:0.4rem;padding:1rem">
+      <div class="card-title" style="font-size:0.65rem">Verification hash preview</div>
+      <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text2);margin-bottom:0.3rem">
+        Input: <span id="hash-input-str" style="color:var(--amber)">—</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.72rem;color:var(--green);word-break:break-all" id="hash-preview">—</div>
+    </div>
+
+    <button class="btn btn-primary mt-2" id="btn-issue">Mine &amp; Issue</button>
+  </div>
+
+  <!-- Chain explorer -->
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between;display:flex;align-items:center">
+      <span>Chain explorer</span>
+      <div class="flex items-center gap-1">
+        <span class="text-mono text-muted" style="font-size:0.7rem" id="chain-length">—</span>
+        <span class="text-muted text-mono" style="font-size:0.7rem">blocks</span>
+        <span class="badge" id="chain-valid-badge">—</span>
+      </div>
+    </div>
+
+    <div class="chain-wrap">
+      <table class="chain-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>type</th>
+            <th>DID</th>
+            <th>data</th>
+            <th>hash</th>
+            <th>timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="chain-tbody">
+          <tr><td colspan="6" class="text-muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VERIFIER PAGE
+════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-verifier">
+  <div class="page-header">
+    <h1>Details &amp; Verification</h1>
+    <p>Authorized lookup of credential records. Login required.</p>
+  </div>
+
+  <!-- Auth gate -->
+  <div id="verifier-gate">
+    <div class="card login-gate">
+      <div class="lock-icon">⬡</div>
+      <h2>authentication required</h2>
+      <p>This section is restricted to authorized issuers and administrators.</p>
+      <div id="gate-flash"></div>
+      <div class="login-form-inline">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="gate-username" placeholder="admin" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="gate-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary w-full" id="btn-gate-login">Authenticate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authenticated content -->
+  <div class="hidden" id="verifier-content">
+    <div id="verifier-flash"></div>
+
+    <div class="card">
+      <div class="card-title">DID Lookup</div>
+      <div class="form-group">
+        <label class="form-label">DID to inspect</label>
+        <input class="form-input" id="lookup-did" placeholder="did:decen:…" />
+      </div>
+      <button class="btn btn-primary" id="btn-lookup">Lookup</button>
+    </div>
+
+    <div class="hidden" id="verifier-result"></div>
+  </div>
+</div>
+
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
