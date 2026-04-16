@@ -1,292 +1,276 @@
-<div align="center">
+# Decentralized Identity System (DID)
 
-<img src="https://img.shields.io/badge/IPFS-Powered-65C2CB?style=for-the-badge&logo=ipfs&logoColor=white"/>
-<img src="https://img.shields.io/badge/Filecoin-Storage-0090FF?style=for-the-badge&logo=filecoin&logoColor=white"/>
-<img src="https://img.shields.io/badge/Web3.Storage-API-7B2FBE?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/Status-Prototype-orange?style=for-the-badge"/>
-
-# 🌐 Decentralised Identity Platform
-
-**A decentralised document storage and management platform powered by IPFS, Filecoin, and Web3.Storage — giving users full control over their identity-related files without trusting any centralised server.**
-
-[🚀 Quick Start](#️-installation--setup) · [📖 How It Works](#-how-it-works) · [📁 Structure](#-directory-structure) · [🤝 Contributing](#-contributing)
-
-</div>
+A full-stack decentralized identity and credential management system built with Python and Flask. Academic credentials are issued and stored on a custom-built blockchain. Each node holds a full copy of the chain and syncs with peers via a gossip protocol. No external blockchain framework is used — the chain is implemented from scratch.
 
 ---
 
-## 📌 Overview
+## What it does
 
-The **Decentralised Identity Platform** is a lightweight, browser-based prototype that explores a decentralised approach to identity document management. Instead of uploading sensitive files to centralised cloud storage, users upload documents directly to **IPFS** — a peer-to-peer hypermedia protocol — with persistence guaranteed by **Filecoin** through the **Web3.Storage** API.
+The system has three functional modules accessible from the web UI:
 
-Each file is identified by a unique **CID (Content Identifier)** derived from its content, making storage tamper-proof and verifiable by anyone on the network.
+**Wallet** — Generate a Decentralized Identifier (DID) in the format `did:decen:<64-hex>`. The DID is the user's identity token. View all credentials issued under a DID. Share credentials via a QR code that points to the public verification endpoint.
 
-> ⚠️ **Prototype Notice:** This project demonstrates decentralised storage concepts and is **not** a production-ready or fully compliant [W3C DID](https://www.w3.org/TR/did-core/) (Decentralised Identifier) implementation. See [Limitations](#-limitations) for details.
+**Issuer** — Issue academic credentials (name, degree, expiry) to a DID. Each credential is mined as a block on the chain with Proof-of-Work. A DID can hold multiple credentials (multiple degrees or achievements). Each block stores a verification hash computed as `SHA-256(name_without_spaces + did)` for tamper detection. The chain explorer shows the live ledger.
 
----
-
-## ✨ Features
-
-| Feature | Description |
-|---|---|
-| 📂 **Document Upload** | Upload files directly to IPFS via Web3.Storage API |
-| 🔗 **Filecoin Persistence** | Files are backed by Filecoin for long-term storage guarantees |
-| 🧾 **CID Retrieval** | Every uploaded file returns a unique Content Identifier (CID) |
-| 🌐 **Zero-Dependency Frontend** | Pure HTML, CSS, and JavaScript — no build tools required |
-| 💾 **Session Simulation** | Basic login flow using browser `localStorage` |
+**Details and Verification** — Login-gated section for authorized issuers. Look up any DID and see its full credential record with hash validity status. Revoke a DID by appending a REVOKE block — the original credential blocks remain intact (append-only). The system returns three distinct states: `active`, `revoked`, or `not_found`.
 
 ---
 
-## ⚙️ How It Works
+## Tech stack
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     USER BROWSER                            │
-│                                                             │
-│   1. User logs in ──► Credentials stored in localStorage   │
-│                                                             │
-│   2. User selects a file to upload                          │
-│          │                                                  │
-│          ▼                                                  │
-│   3. File sent via Web3.Storage API (REST call)             │
-│          │                                                  │
-│          ▼                                                  │
-│   4. File pinned to IPFS node                               │
-│          │                                                  │
-│          ▼                                                  │
-│   5. Filecoin deal created for persistence                  │
-│          │                                                  │
-│          ▼                                                  │
-│   6. CID (Content Identifier) returned to user              │
-│          │                                                  │
-│          ▼                                                  │
-│   7. File accessible at: https://dweb.link/ipfs/<CID>       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Step-by-Step Flow
-
-1. **Login** — User enters credentials stored/checked in `localStorage` (no backend involved)
-2. **File Selection** — User picks a document via the browser file picker
-3. **Upload** — `app.js` calls the Web3.Storage REST API with the file and your API token
-4. **IPFS Pinning** — Web3.Storage pins the file to an IPFS node
-5. **Filecoin Deal** — A Filecoin storage deal is automatically created for persistence
-6. **CID Generated** — A unique hash-based Content Identifier is returned
-7. **Retrieval** — The file can be accessed by anyone using the CID via the IPFS gateway
-
----
-
-## 📁 Directory Structure
-
-```
-Decentralised-Identity-Platform/
-│
-├── 📄 index.html              # Entry point — Login / Landing page
-├── 📄 dashboard.html          # Main dashboard after login (upload & retrieve files)
-│
-├── 📁 css/
-│   └── style.css              # Global styles for all pages
-│
-├── 📁 js/
-│   ├── app.js                 # Core logic: Web3.Storage API calls, upload handler
-│   ├── auth.js                # Login/logout using browser localStorage
-│   └── utils.js               # Helper functions (CID display, error handling, etc.)
-│
-├── 📁 assets/
-│   └── logo.png               # Platform logo / icons
-│
-├── 📄 config.js               # API token and environment configuration
-├── 📄 README.md               # Project documentation (you are here)
-└── 📄 LICENSE                 # MIT License
-```
-
-> 📝 **Note:** If your repository structure differs slightly, update this tree to match your actual files after cloning.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
+| Layer | Choice | Reason |
 |---|---|---|
-| **Frontend** | HTML5, CSS3, JavaScript (ES6+) | UI and user interaction |
-| **Decentralised Storage** | [IPFS](https://ipfs.tech/) | Content-addressed file storage |
-| **Storage Persistence** | [Filecoin](https://filecoin.io/) | Long-term decentralised persistence |
-| **Storage API** | [Web3.Storage](https://web3.storage/) | Bridge between browser and IPFS/Filecoin |
-| **Auth (Prototype)** | Browser `localStorage` | Simulated login session |
+| Backend | Python 3.12, Flask 3 | Lightweight, no ORM overhead |
+| Blockchain | Custom (chain.py) | Built from scratch, no Web3/Ethereum |
+| Chain storage | `chain.json` per node | Human-readable, fully decentralized |
+| Auth storage | SQLite (`auth.db`) | Node-local, passwords off the public ledger |
+| QR generation | `qrcode[pil]` | Generates base64 PNG served inline |
+| Frontend | Vanilla JS + Jinja2 | No build step, no framework |
 
 ---
 
-## 📦 Installation & Setup
+## Directory structure
 
-### Prerequisites
+```
+did_system/
+├── app.py                      # Flask factory, CLI entry point, route registration
+├── requirements.txt            # flask, qrcode[pil], Pillow, requests
+│
+├── blockchain/
+│   ├── __init__.py
+│   ├── chain.py                # Block dataclass, Blockchain engine (mine, validate, persist)
+│   └── store.py                # ChainStore — wraps Blockchain, adds P2P broadcast and sync
+│
+├── routes/
+│   ├── __init__.py
+│   ├── wallet.py               # /wallet/*   — create-did, credentials, share/QR
+│   ├── issuer.py               # /issuer/*   — issue credential, chain explorer, hash preview
+│   ├── verifier.py             # /verifier/* — login, logout, lookup, revoke
+│   └── p2p.py                  # /p2p/*      — block receive, peer registry, manual sync
+│
+├── utils/
+│   ├── __init__.py
+│   ├── did_utils.py            # generate_did(), is_valid_did(), sanitize_did()
+│   ├── auth_db.py              # SQLite user store, authenticate_user(), @login_required
+│   └── qr_utils.py            # generate_qr_base64() — returns data:image/png;base64,...
+│
+├── templates/
+│   └── index.html              # Single-page app shell — all three sections
+│
+├── static/
+│   ├── css/
+│   │   └── main.css            # Dark terminal theme, CSS variables, all component styles
+│   └── js/
+│       └── app.js              # SPA router, fetch-based API client, all page logic
+│
+├── chain.json                  # Generated on first run — the blockchain ledger
+├── peers.json                  # Generated on first run — known peer node URLs
+└── auth.db                     # Generated on first run — SQLite verifier user store
+```
 
-Before you begin, make sure you have:
-
-- ✅ A modern browser (Chrome, Firefox, Brave)
-- ✅ A free [Web3.Storage](https://web3.storage/) account and **API Token**
-- ✅ [Node.js](https://nodejs.org/) (optional, only needed for local server)
-- ✅ [Git](https://git-scm.com/) installed
+`chain.json` and `peers.json` are decentralized — every node holds its own copy and they stay in sync via P2P. `auth.db` is intentionally node-local and never replicated.
 
 ---
 
-### 1. Clone the Repository
+## Installation
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/Decentralised-Identity-Platform.git
-cd Decentralised-Identity-Platform
+git clone <repo>
+cd did_system
+pip install -r requirements.txt
 ```
 
-### 2. Configure Your API Token
+Python 3.12+ required. No other services needed.
 
-Open `config.js` and replace the placeholder with your Web3.Storage API token:
+---
 
-```js
-// config.js
-const CONFIG = {
-  WEB3_STORAGE_TOKEN: "YOUR_WEB3_STORAGE_API_TOKEN_HERE"
-};
-```
-
-> 🔑 Get your free API token at: [https://web3.storage/](https://web3.storage/)
-
-### 3. Run the Project
-
-**Option A — Open directly (no server needed):**
+## Running a single node
 
 ```bash
-# Simply open index.html in your browser
-start index.html        # Windows
-open index.html         # macOS
-xdg-open index.html     # Linux
+python app.py
 ```
 
-**Option B — Use a local development server (recommended):**
+Default port is 5000. Open `http://localhost:5000` in the browser.
+
+On first run, `chain.json`, `peers.json`, and `auth.db` are created automatically in the project directory. The default admin account is seeded into `auth.db`.
+
+---
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `ADMIN_USER` | `admin` | Verifier admin username seeded on first run |
+| `ADMIN_PASS` | `admin123` | Verifier admin password seeded on first run |
+| `SECRET_KEY` | `os.urandom(32)` | Flask session secret. Set a fixed value in production. |
 
 ```bash
-# Using npx serve
-npx serve .
-
-# OR using Python
-python -m http.server 8080
-
-# OR using VS Code Live Server extension
-# Right-click index.html → "Open with Live Server"
+export ADMIN_USER=yourname
+export ADMIN_PASS=yourpassword
+python app.py
 ```
 
-Then visit: `http://localhost:3000` (or the port shown in your terminal)
+Note: `ADMIN_USER` and `ADMIN_PASS` are upserted into `auth.db` on every startup, so changing them and restarting takes effect immediately.
+
+`SECRET_KEY` uses `os.urandom(32)` by default, which generates a new key each time the process starts. This is fine as long as the server is not restarted between a user logging in and making subsequent requests. For production, set a fixed `SECRET_KEY` environment variable.
 
 ---
 
-## 🖥️ Main Script Reference — `app.js`
-
-The core of the platform lives in `js/app.js`. Here's a breakdown of its key functions:
+## CLI arguments
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     app.js — Help Layout                    │
-├──────────────────────┬──────────────────────────────────────┤
-│ Function             │ Description                          │
-├──────────────────────┼──────────────────────────────────────┤
-│ uploadFile(file)     │ Uploads a file to IPFS via           │
-│                      │ Web3.Storage API. Returns CID.       │
-├──────────────────────┼──────────────────────────────────────┤
-│ retrieveFile(cid)    │ Constructs IPFS gateway URL from     │
-│                      │ CID and opens/displays the file.     │
-├──────────────────────┼──────────────────────────────────────┤
-│ displayCID(cid)      │ Shows the returned CID on the        │
-│                      │ dashboard for user reference.        │
-├──────────────────────┼──────────────────────────────────────┤
-│ handleError(err)     │ Catches API/network errors and       │
-│                      │ shows user-friendly messages.        │
-└──────────────────────┴──────────────────────────────────────┘
-
-Usage:
-  uploadFile(fileInput.files[0])
-    → POSTs file to Web3.Storage
-    → Returns: { cid: "bafybeig..." }
-
-  retrieveFile("bafybeig...")
-    → Opens: https://dweb.link/ipfs/bafybeig...
+python app.py [--port PORT] [--chain PATH] [--peers PATH] [--auth-db PATH] [--node-url URL]
 ```
 
-> 📝 Update this section with actual function names from `app.js` once you review the source code.
+| Argument | Default | Description |
+|---|---|---|
+| `--port` | `5000` | Port to listen on |
+| `--chain` | `chain.json` | Path to the chain ledger file |
+| `--peers` | `peers.json` | Path to the peers registry file |
+| `--auth-db` | `auth.db` | Path to the SQLite auth database |
+| `--node-url` | `http://localhost:<port>` | Public URL of this node, used in P2P announcements |
 
 ---
 
-## ⚠️ Limitations
+## Running multiple nodes (P2P)
 
-| Limitation | Detail |
-|---|---|
-| 🔓 No real authentication | Login uses `localStorage` — no backend, no encryption |
-| 📂 No file encryption | Files uploaded to IPFS are publicly accessible by CID |
-| 🔏 No access control | Anyone with the CID can access the file |
-| 🆔 Not a full DID system | Does not implement W3C DID / Verifiable Credentials spec |
-
----
-
-## 🚧 Future Roadmap
-
-- [ ] 🔑 **Wallet-based Auth** — MetaMask / WalletConnect login
-- [ ] 🆔 **True DID Support** — Implement W3C Decentralised Identifiers
-- [ ] 📜 **Verifiable Credentials** — Issue and verify credentials on-chain
-- [ ] 🔒 **Client-side Encryption** — Encrypt files before uploading to IPFS
-- [ ] ⛓️ **Smart Contract Access Control** — On-chain permission management
-- [ ] 📱 **Responsive UI** — Mobile-friendly interface improvements
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome and appreciated! Here's how to get started:
+Each node needs its own data files and a `--node-url` that other nodes can actually reach.
 
 ```bash
-# 1. Fork the repository on GitHub
+# Node A
+python app.py --port 5000 \
+              --chain node_a/chain.json \
+              --peers node_a/peers.json \
+              --auth-db node_a/auth.db \
+              --node-url http://192.168.1.39:5000
 
-# 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/Decentralised-Identity-Platform.git
-
-# 3. Create a feature branch
-git checkout -b feature/your-feature-name
-
-# 4. Make your changes and commit
-git add .
-git commit -m "feat: describe your change clearly"
-
-# 5. Push your branch
-git push origin feature/your-feature-name
-
-# 6. Open a Pull Request on GitHub
+# Node B (separate machine or separate terminal)
+python app.py --port 5002 \
+              --chain node_b/chain.json \
+              --peers node_b/peers.json \
+              --auth-db node_b/auth.db \
+              --node-url http://192.168.1.45:5002
 ```
 
-Please follow conventional commit messages:
-- `feat:` for new features
-- `fix:` for bug fixes
-- `docs:` for documentation changes
-- `refactor:` for code refactoring
+Register the nodes with each other (do this once):
+
+```bash
+curl -X POST http://192.168.1.39:5000/p2p/register-peer \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "http://192.168.1.45:5002"}'
+
+curl -X POST http://192.168.1.45:5002/p2p/register-peer \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "http://192.168.1.39:5000"}'
+```
+
+After registration, any block written on one node is broadcast to all known peers. On startup, each node pulls from all peers and adopts the longest valid chain.
 
 ---
 
-## 📄 License
+## API reference
 
-This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for details.
+### Wallet
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/wallet/create-did` | None | Generate a new DID |
+| GET | `/wallet/credentials?did=` | None | Get all credentials for a DID |
+| GET | `/wallet/share?did=` | None | Get QR code for a DID |
+
+### Issuer
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/issuer/issue` | None | Issue a credential block |
+| GET | `/issuer/chain` | None | Get full chain (chain explorer) |
+| GET | `/issuer/verify-hash?did=&username=` | None | Preview verification hash |
+
+### Verifier
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/verifier/login` | None | Authenticate and create session |
+| POST | `/verifier/logout` | None | Clear session |
+| GET | `/verifier/me` | None | Check session status |
+| GET | `/verifier/lookup?did=` | Required | Full credential lookup |
+| POST | `/verifier/revoke` | Required | Append a REVOKE block |
+
+### P2P (internal)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/p2p/chain` | Return this node's full chain |
+| POST | `/p2p/receive-block` | Accept a broadcast block from a peer |
+| GET | `/p2p/peers` | List known peers |
+| POST | `/p2p/register-peer` | Register a new peer `{"url": "..."}` |
+| POST | `/p2p/sync` | Manually trigger sync from all peers |
+
+### Utility
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Node status, chain length, peer count |
+| GET | `/verify?did=` | Public credential verification (QR target) |
 
 ---
 
-## 🙌 Acknowledgements
+## Block structure
 
-This project is built on the shoulders of incredible open-source and decentralised infrastructure:
+Every entry in `chain.json` follows this schema:
 
-- [**IPFS**](https://ipfs.tech/) — InterPlanetary File System
-- [**Filecoin**](https://filecoin.io/) — Decentralised storage network
-- [**Web3.Storage**](https://web3.storage/) — Simple API for IPFS + Filecoin
+```json
+{
+  "index": 2,
+  "timestamp": 1700000000.0,
+  "block_type": "CREDENTIAL",
+  "did": "did:decen:3f8a2b...",
+  "data": {
+    "username": "Alpha Beta",
+    "degree": "B.Tech Computer Science",
+    "expiry": "2028-06-30",
+    "verification_hash": "sha256(AlphaBetadid:decen:3f8a2b...)"
+  },
+  "prev_hash": "000abc...",
+  "nonce": 58291,
+  "hash": "000def..."
+}
+```
+
+`block_type` is one of `GENESIS`, `CREDENTIAL`, or `REVOKE`. The hash always starts with `000` (difficulty 3). The genesis block uses `timestamp: 0.0` so all nodes produce an identical genesis hash, enabling cross-node `prev_hash` validation.
 
 ---
 
-<div align="center">
+## Verification hash
 
-**⭐ If this project helped you, please consider giving it a star on GitHub! ⭐**
+The verification hash stored in each credential block is:
 
-Made with ❤️ for the decentralised web
+```
+SHA-256(username_without_spaces + did)
+```
 
-</div>
+Example: username `Alpha Beta`, DID `did:decen:abc123` → `SHA-256("AlphaBetadid:decen:abc123")`.
+
+At lookup time the hash is recomputed and compared against the stored value. A mismatch indicates the block data has been tampered with.
+
+---
+
+## Clearing the pycache
+
+If you copy updated `.py` files into the project and changes do not take effect, Python may be loading stale compiled bytecode from `__pycache__`. Clear it with:
+
+```bash
+find . -name "*.pyc" -delete && find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null
+```
+
+Or use the included `pycache_clear.sh` if present.
+
+---
+
+## Known limitations and production checklist
+
+- `SESSION_COOKIE_SECURE` is set to `False` — enable this and run behind HTTPS in production.
+- Password hashing uses SHA-256. Replace with `bcrypt` or `argon2` before any public deployment.
+- The P2P layer has no authentication — any node that knows your IP can push blocks. Add a shared secret or certificate pinning for a production network.
+- `chain.json` has no size limit. Add pruning or archiving for long-running nodes.
+- The `/verifier/register` endpoint for adding additional admin users exists in the codebase but is not yet exposed in the UI.
